@@ -1,0 +1,18 @@
+stages:
+  - test
+
+tests:
+  stage: test
+  tags:
+    - kubernetes
+  image: python:3.5
+  script:
+    - mkdir -p .pip-cache
+    - pip --cache-dir .pip-cache install -qr requirements.txt
+    - pip --cache-dir .pip-cache install -qr dev-requirements.txt
+    - flake8
+    - tests/certificates/generate_certificates.sh
+    - python -m unittest discover -s tests/
+  cache:
+    paths:
+      - .pip-cache
