@@ -1,5 +1,4 @@
 import logging
-import re
 from pathlib import Path
 
 from cryptography import x509
@@ -86,7 +85,7 @@ class SslCertificateExpiryHandler:
                 logging.debug("Matching filename {} against regexes: {}..."
                               .format(file.name, self.__certificate_suffixes))
                 matches = list(filter(
-                    lambda f: re.search("{}$".format(f), file.name),
+                    lambda f: file.name.endswith(f),
                     self.__certificate_suffixes))
                 if len(matches) > 0 and file.is_file():
                     logging.debug("Found certificate at {}".format(str(file)))
