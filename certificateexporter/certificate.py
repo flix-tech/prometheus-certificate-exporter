@@ -1,8 +1,6 @@
 import logging
-import os
 import re
 from pathlib import Path
-from typing import Iterable, List
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -20,32 +18,32 @@ CERTIFICATEEXPORTER_LOOKUP_DURATION = Summary(
 
 class Cert:
     def __init__(self, cert, cert_path):
-        self.__cert: x509.Certificate = cert
+        self.__cert = cert
         self.__cert_path = cert_path
         self.__subjects = self.__extract_subjects(cert)
 
     @property
-    def cert(self) -> Certificate:
+    def cert(self):
         return self.__cert
 
     @property
-    def cert_path(self) -> Path:
+    def cert_path(self):
         return self.__cert_path
 
     @property
-    def subjects(self) -> List[str]:
+    def subjects(self):
         return self.__subjects
 
     @property
-    def begin_validity(self) -> float:
+    def begin_validity(self):
         return self.cert.not_valid_before.timestamp()
 
     @property
-    def end_validity(self) -> float:
+    def end_validity(self):
         return self.cert.not_valid_after.timestamp()
 
     @property
-    def issuer_cn(self) -> str:
+    def issuer_cn(self):
         cn_list = self.__cert.issuer.get_attributes_for_oid(
             x509.OID_COMMON_NAME)
         if cn_list:
@@ -54,7 +52,7 @@ class Cert:
             return ''
 
     @staticmethod
-    def __extract_subjects(cert: Certificate) -> List[str]:
+    def __extract_subjects(cert: Certificate):
         names = []
         for attr in cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME):
             names.append(attr.value)
@@ -66,16 +64,16 @@ class Cert:
             pass
         return names
 
-    def __repr__(self) -> str:
-        return (f'cert_path: {self.__cert_path}, '
-                f'subjects: {self.subjects}')
+    def __repr__(self):
+        return ('cert_path: {self.__cert_path}, '
+                'subjects: {self.subjects}')
 
 
 class SslCertificateExpiryHandler:
     def __init__(
             self,
-            search_paths: Iterable[os.PathLike],
-            certificate_suffixes: List[str]):
+            search_paths,
+            certificate_suffixes):
         self.__paths = list(map(lambda s: Path(s), search_paths))
         self.__certificate_suffixes = certificate_suffixes
 
