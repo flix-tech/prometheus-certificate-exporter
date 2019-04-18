@@ -15,7 +15,7 @@ def main(args):
             args.path, args.certificate_suffix
         )
     )
-    prometheus_client.start_http_server(8000)
+    prometheus_client.start_http_server(args.port)
     signal.pause()
 
 
@@ -27,12 +27,16 @@ if __name__ == "__main__":
              'for hostname matching'
     )
     parser.add_argument(
-        '--certificate-suffix', action='append', default=["*.pem"],
+        '--certificate-suffix', action='append', default=[],
         help='Suffix to match against, when looking for certificates'
     )
     parser.add_argument(
         '--log-level', type=str, default="INFO",
         help='Set the logging level. Defaults to INFO.'
+    )
+    parser.add_argument(
+        '--port', type=int, default="8080",
+        help='Port the exporter will listen on.'
     )
     parsed_args = parser.parse_args()
     logging.getLogger()

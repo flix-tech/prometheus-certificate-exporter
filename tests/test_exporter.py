@@ -37,8 +37,6 @@ class TestExporter(unittest.TestCase):
             now = time.time()
             certname = TestExporter. \
                 __get_certname_by_sample_path(sample.labels['path'])
-            print(metric.name, sample.labels)
-            print(sample.value, now, test_results[metric.name][certname])
             self.assertEqual(
                 sample.value > now,
                 test_results[metric.name][certname]
