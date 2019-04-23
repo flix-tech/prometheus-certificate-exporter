@@ -105,8 +105,8 @@ class SslCertificateExpiryHandler:
                                         .format(str(file)))
                         load_error_paths.append(str(file))
                 else:
-                    logging.debug("File at path {} is not a certificate. "
-                                  "Ignoring")
+                    logging.debug("File at path {} should not be exported. "
+                                  "Ignoring".format(str(file)))
             logging.debug("Found {} SSL certificates".format(len(certs)))
         return certs, load_error_paths
 
