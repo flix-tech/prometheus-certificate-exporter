@@ -79,24 +79,32 @@ class SslCertificateExpiryHandler:
     @CERTIFICATEEXPORTER_LOOKUP_DURATION.time()
     def __load_ssl_certs(self):
         certs = []
+        load_error_paths = []
         for directory in self.__paths:
             logging.debug("Looking for certs in {}".format(str(directory)))
             for file in directory.iterdir():
-                logging.debug("Matching filename {} against regexes: {}..."
-                              .format(file.name, self.__certificate_suffixes))
                 matches = list(filter(
                     lambda f: file.name.endswith(f),
                     self.__certificate_suffixes))
                 if len(matches) > 0 and file.is_file():
-                    logging.debug("Found certificate at {}".format(str(file)))
+                    logging.debug("Found certificate at: {}".format(str(file)))
                     cert_data = file.read_bytes()
-                    cert = x509.load_pem_x509_certificate(
-                        cert_data, default_backend())
-                    certs.append(Cert(cert=cert, cert_path=Path(file)))
+                    try:
+                        cert = x509.load_pem_x509_certificate(
+                            cert_data, default_backend())
+                        certs.append(Cert(cert=cert, cert_path=Path(file)))
+                    except ValueError:
+                        logging.warning("Failed loading certificate at {}"
+                                        .format(str(file)))
+                        load_error_paths.append(str(file))
+                else:
+                    logging.debug("File at path {} is not a certificate. "
+                                  "Ignoring")
             logging.debug("Found {} SSL certificates".format(len(certs)))
-        return certs
+        return certs, load_error_paths
 
     def collect(self):
+        logging.debug("CertificateExporter, start metric collection...")
         cert_begin = GaugeMetricFamily(
             'ssl_certificate_begin_validity_timestamp',
             'Beginning of certificate validity timestamp',
@@ -105,7 +113,11 @@ class SslCertificateExpiryHandler:
             'ssl_certificate_end_validity_timestamp',
             'End of certificate validity timestamp',
             labels=['path', 'issuer', 'subjects'])
-        certs = self.__load_ssl_certs()
+        load_error = GaugeMetricFamily(
+            'certificateexporter_load_error',
+            'Certificate exporter got an error while loading certificate',
+            labels=['path'])
+        certs, load_error_paths = self.__load_ssl_certs()
         for cert in certs:
             cert_path = str(cert.cert_path)
             cert_subjects = ";".join(cert.subjects)
@@ -116,5 +128,9 @@ class SslCertificateExpiryHandler:
             cert_end.add_metric(
                 [cert_path, cert_issuer, cert_subjects],
                 cert.end_validity)
+        for path in load_error_paths:
+            load_error.add_metric([path], 1)
+        logging.debug("CertificateExporter, metric collection complete.")
         yield cert_begin
         yield cert_end
+        yield load_error

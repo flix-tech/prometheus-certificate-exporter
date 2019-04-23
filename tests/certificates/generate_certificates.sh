@@ -38,3 +38,10 @@ openssl ca -batch -config openssl.cnf -in public.csr -out "$CERT_DIR/still-not-v
 # Expired certificate
 cleanup
 openssl ca -batch -config openssl.cnf -in public.csr -out "$CERT_DIR/expired.pem" -startdate $(date -d '-1 year' +'%Y%m%d000000Z') -enddate $(date -d '-2 months' +'%Y%m%d000000Z') -cert ca.pem -keyfile private.pem  -create_serial -subj "$SUBJECT"
+
+# Generate a second certificate dir
+cp -r ${CERT_DIR} ${CERT_DIR}_copy
+
+# Generate a failing certificate dir
+[ -d ${CERT_DIR}_invalid ] || mkdir ${CERT_DIR}_invalid
+echo "Not a cert" > ${CERT_DIR}_invalid/not-a-cert.pem
