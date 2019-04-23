@@ -118,3 +118,22 @@ class TestExporter(unittest.TestCase):
                     metric.samples[0].labels['path'])
                 self.assertEqual(certname, "not-a-cert.pem")
         self.assertEqual(certificateexporter_load_error_found, True)
+
+    def test_exclude_regex(self):
+        certnames_yet_to_find = {"expired.pem", "valid.pem"}
+        cert_handler = certificate.SslCertificateExpiryHandler(
+                ["tests/certificates/certs"],
+                [".pem"],
+                "still-not"
+            )
+        registry = prometheus_client.core.REGISTRY
+        registry.register(cert_handler)
+        self.__collectors_to_unregister.append(cert_handler)
+        for metric in registry.collect():
+            if metric.name == "ssl_certificate_begin_validity_timestamp":
+                for sample in list(metric.samples):
+                    certname = TestExporter.__get_certname_by_sample_path(
+                        sample.labels['path'])
+                    self.assertTrue(certname in certnames_yet_to_find)
+                    certnames_yet_to_find.remove(certname)
+        self.assertEqual(len(certnames_yet_to_find), 0)

@@ -1,4 +1,5 @@
 import logging
+import re
 from pathlib import Path
 
 from cryptography import x509
@@ -72,9 +73,11 @@ class SslCertificateExpiryHandler:
     def __init__(
             self,
             search_paths,
-            certificate_suffixes):
+            certificate_suffixes,
+            exclude_regex=None):
         self.__paths = list(map(lambda s: Path(s), search_paths))
         self.__certificate_suffixes = certificate_suffixes
+        self.__exclude_regex = exclude_regex
 
     @CERTIFICATEEXPORTER_LOOKUP_DURATION.time()
     def __load_ssl_certs(self):
@@ -83,10 +86,14 @@ class SslCertificateExpiryHandler:
         for directory in self.__paths:
             logging.debug("Looking for certs in {}".format(str(directory)))
             for file in directory.iterdir():
-                matches = list(filter(
+                matches_suffixes = list(filter(
                     lambda f: file.name.endswith(f),
                     self.__certificate_suffixes))
-                if len(matches) > 0 and file.is_file():
+                should_be_excluded = self.__exclude_regex is not None and \
+                    re.search(self.__exclude_regex, file.name)
+                if file.is_file() and \
+                        len(matches_suffixes) > 0 and \
+                        not should_be_excluded:
                     logging.debug("Found certificate at: {}".format(str(file)))
                     cert_data = file.read_bytes()
                     try:

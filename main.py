@@ -12,7 +12,9 @@ from certificateexporter import certificate
 def main(args):
     prometheus_client.core.REGISTRY.register(
         certificate.SslCertificateExpiryHandler(
-            args.path, args.certificate_suffix
+            args.path,
+            args.certificate_suffix,
+            args.certificate_exclude_regex
         )
     )
     prometheus_client.start_http_server(args.port)
@@ -29,6 +31,11 @@ if __name__ == "__main__":
     parser.add_argument(
         '--certificate-suffix', action='append', default=[], required=True,
         help='Suffix to match against, when looking for certificates'
+    )
+    parser.add_argument(
+        '--certificate-exclude-regex', type=str, default=None,
+        help='Regex to match against cert names. Matching filenames '
+             'will be ignored. Optional.'
     )
     parser.add_argument(
         '--log-level', type=str, default="INFO",
