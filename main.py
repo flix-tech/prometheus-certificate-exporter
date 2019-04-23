@@ -22,12 +22,12 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--path', action='append', default=[],
+        '--path', action='append', default=[], required=True,
         help='Directory in which to look for certificates '
              'for hostname matching'
     )
     parser.add_argument(
-        '--certificate-suffix', action='append', default=[],
+        '--certificate-suffix', action='append', default=[], required=True,
         help='Suffix to match against, when looking for certificates'
     )
     parser.add_argument(
