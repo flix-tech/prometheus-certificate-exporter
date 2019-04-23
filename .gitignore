@@ -2,4 +2,4 @@
 __pycache__
 .idea
 
-tests/certificates/certs
+tests/certificates/certs*

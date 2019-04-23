@@ -12,7 +12,7 @@ CERTS_SUFFIXES = [".pem"]
 
 # Schema:
 # test_results[metric_name][certificate_name] = is_metric_gt_current_time
-test_results = {
+test_base_results = {
     "ssl_certificate_begin_validity_timestamp": {
         "valid.pem": False,
         "expired.pem": False,
@@ -39,10 +39,10 @@ class TestExporter(unittest.TestCase):
                 __get_certname_by_sample_path(sample.labels['path'])
             self.assertEqual(
                 sample.value > now,
-                test_results[metric.name][certname]
+                test_base_results[metric.name][certname]
             )
 
-    def test_exporter(self):
+    def test_base_behaviour(self):
         cert_handler = certificate.SslCertificateExpiryHandler(
                 ["tests/certificates/certs"], [".pem"]
             )
@@ -59,4 +59,47 @@ class TestExporter(unittest.TestCase):
                 self.__check_metric(metric)
         self.assertEqual(ssl_certificate_begin_validity_timestamp_found, True)
         self.assertEqual(ssl_certificate_end_validity_timestamp_found, True)
+        registry.unregister(cert_handler)
+
+    def test_multiple_suffixes(self):
+        cert_handler = certificate.SslCertificateExpiryHandler(
+                ["tests/certificates/certs"], ["valid.pem", "expired.pem"]
+            )
+        registry = prometheus_client.core.REGISTRY
+        registry.register(cert_handler)
+        certnames_found = {
+            "valid.pem": False,
+            "still-not-valid.pem": False,
+            "expired.pem": False
+        }
+        for metric in registry.collect():
+            if metric.name == "ssl_certificate_begin_validity_timestamp":
+                for sample in list(metric.samples):
+                    certname = TestExporter. \
+                        __get_certname_by_sample_path(sample.labels['path'])
+                    self.assertEqual(certname in certnames_found, True)
+                    certnames_found[certname] = True
+        for certname in certnames_found:
+            self.assertEqual(certnames_found[certname], True)
+        registry.unregister(cert_handler)
+
+    def test_multiple_paths(self):
+        cert_handler = certificate.SslCertificateExpiryHandler(
+                ["tests/certificates/certs", "tests/certificates/certs2"],
+                ["expired.pem"]
+            )
+        registry = prometheus_client.core.REGISTRY
+        registry.register(cert_handler)
+        suffixes_found = {
+            "certs/expired.pem": False,
+            "certs2/expired.pem": False
+        }
+        for metric in registry.collect():
+            if metric.name == "ssl_certificate_begin_validity_timestamp":
+                for sample in list(metric.samples):
+                    for suffix in suffixes_found:
+                        if sample.labels['path'].endswith(suffix):
+                            suffixes_found[suffix] = True
+        for suffix in suffixes_found:
+            self.assertEqual(suffixes_found[suffix], True)
         registry.unregister(cert_handler)

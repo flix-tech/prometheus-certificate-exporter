@@ -12,6 +12,7 @@ tests:
     - pip --cache-dir .pip-cache install -qr dev-requirements.txt
     - flake8
     - tests/certificates/generate_certificates.sh
+    - cp -r tests/certificates/certs/ tests/certificates/certs2
     - python -m unittest discover -s tests/
   cache:
     paths:
