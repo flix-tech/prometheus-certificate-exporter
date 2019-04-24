@@ -9,8 +9,12 @@ usage: main.py [-h] --path PATH --certificate-suffix CERTIFICATE_SUFFIX
 
 optional arguments:
   -h, --help            show this help message and exit
-  --path PATH           Directory in which to look for certificates for
-                        hostname matching
+  --path PATH           Path in which to look for certificates. If it's a
+                        directory will look for files inside it. If it's a
+                        file it will check it ignoring filename suffix
+                        matching and exclusion (files are not constrained by
+                        --certificate-suffix and --certificate-exclude-regex
+                        options)
   --certificate-suffix CERTIFICATE_SUFFIX
                         Suffix to match against, when looking for certificates
   --certificate-exclude-regex CERTIFICATE_EXCLUDE_REGEX
