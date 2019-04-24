@@ -83,32 +83,62 @@ class SslCertificateExpiryHandler:
     def __load_ssl_certs(self):
         certs = []
         load_error_paths = []
-        for directory in self.__paths:
-            logging.debug("Looking for certs in {}".format(str(directory)))
-            for file in directory.iterdir():
-                matches_suffixes = list(filter(
-                    lambda f: file.name.endswith(f),
-                    self.__certificate_suffixes))
-                should_be_excluded = self.__exclude_regex is not None and \
-                    re.search(self.__exclude_regex, file.name)
-                if file.is_file() and \
-                        len(matches_suffixes) > 0 and \
-                        not should_be_excluded:
-                    logging.debug("Found certificate at: {}".format(str(file)))
-                    cert_data = file.read_bytes()
-                    try:
-                        cert = x509.load_pem_x509_certificate(
-                            cert_data, default_backend())
-                        certs.append(Cert(cert=cert, cert_path=Path(file)))
-                    except ValueError:
-                        logging.warning("Failed loading certificate at {}"
-                                        .format(str(file)))
-                        load_error_paths.append(str(file))
-                else:
-                    logging.debug("File at path {} should not be exported. "
-                                  "Ignoring".format(str(file)))
-            logging.debug("Found {} SSL certificates".format(len(certs)))
+        for cert_path in self.__get_certpaths():
+            if not self.__validate_path(cert_path):
+                load_error_paths.append(str(cert_path))
+                continue
+            try:
+                cert_data = cert_path.read_bytes()
+                cert = x509.load_pem_x509_certificate(
+                    cert_data, default_backend())
+                certs.append(Cert(cert=cert, cert_path=cert_path))
+            except Exception as e:
+                logging.warning("Failed loading certificate at {}: {}: {}"
+                                .format(str(cert_path), type(e).__name__, e))
+                load_error_paths.append(str(cert_path))
+        logging.debug("Found {} SSL certificates".format(len(certs)))
         return certs, load_error_paths
+
+    def __validate_path(self, cert_path):
+        if cert_path.exists() and cert_path.is_file():
+            return True
+        elif not cert_path.exists():
+            logging.warning("Failed loading certificate. {} "
+                            "does not exist"
+                            .format(str(cert_path)))
+        elif not cert_path.is_file():
+            logging.warning("Failed loading certificate. {} "
+                            "is not a regular file or a symlink"
+                            .format(str(cert_path)))
+        else:
+            logging.warning("Failed loading certificate. "
+                            "Unknown problem with {}"
+                            .format(str(cert_path)))
+        return False
+
+    def __get_certpaths(self):
+        for path in self.__paths:
+            if path.is_dir():
+                logging.debug("Looking for certs in {}".format(str(path)))
+                for file in path.iterdir():
+                    matches_suffixes = list(filter(
+                        lambda f: file.name.endswith(f),
+                        self.__certificate_suffixes))
+                    should_be_excluded = self.__exclude_regex is not None and \
+                        re.search(self.__exclude_regex, file.name)
+                    if file.is_file() and \
+                            len(matches_suffixes) > 0 and \
+                            not should_be_excluded:
+                        logging.debug("Found certificate at: "
+                                      " {}".format(str(file)))
+                        yield file
+                    else:
+                        logging.debug("File at path {} does not match suffix, "
+                                      "is excluded, or is not a regular file. "
+                                      "Continuing"
+                                      .format(str(file)))
+            else:
+                yield path
 
     def collect(self):
         logging.debug("CertificateExporter, start metric collection...")

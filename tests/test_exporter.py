@@ -102,7 +102,62 @@ class TestExporter(unittest.TestCase):
                     certpaths_yet_to_find.remove(certpath)
         self.assertEqual(len(certpaths_yet_to_find), 0)
 
+    def test_file_paths(self):
+        certpaths_yet_to_find = {
+            "tests/certificates/certs/expired.pem"
+        }
+        cert_handler = certificate.SslCertificateExpiryHandler(
+                ["tests/certificates/certs/expired.pem"],
+                [".crt"]
+            )
+        registry = prometheus_client.core.REGISTRY
+        registry.register(cert_handler)
+        self.__collectors_to_unregister.append(cert_handler)
+        for metric in registry.collect():
+            if metric.name == "ssl_certificate_begin_validity_timestamp":
+                for sample in list(metric.samples):
+                    certpath = sample.labels['path']
+                    self.assertTrue(certpath in certpaths_yet_to_find)
+                    certpaths_yet_to_find.remove(certpath)
+        self.assertEqual(len(certpaths_yet_to_find), 0)
+
+    def test_fifo_path(self):
+        cert_handler = certificate.SslCertificateExpiryHandler(
+                ["tests/certificates/certs_invalid/fifo.pem"],
+                [".crt"]
+            )
+        registry = prometheus_client.core.REGISTRY
+        registry.register(cert_handler)
+        self.__collectors_to_unregister.append(cert_handler)
+        for metric in registry.collect():
+            if metric.name == "certificateexporter_load_error":
+                certificateexporter_load_error_found = True
+                certname = TestExporter.__get_certname_by_sample_path(
+                    metric.samples[0].labels['path'])
+                self.assertEqual(certname, "fifo.pem")
+        self.assertEqual(certificateexporter_load_error_found, True)
+
+    def test_non_existing_path(self):
+        cert_handler = certificate.SslCertificateExpiryHandler(
+                ["tests/certificates/certs_invalid/non_existing.pem"],
+                [".crt"]
+            )
+        registry = prometheus_client.core.REGISTRY
+        registry.register(cert_handler)
+        self.__collectors_to_unregister.append(cert_handler)
+        for metric in registry.collect():
+            if metric.name == "certificateexporter_load_error":
+                certificateexporter_load_error_found = True
+                certname = TestExporter.__get_certname_by_sample_path(
+                    metric.samples[0].labels['path'])
+                self.assertEqual(certname, "non_existing.pem")
+        self.assertEqual(certificateexporter_load_error_found, True)
+
     def test_invalid_cert(self):
+        certnames_yet_to_find = {
+            "not-a-cert.pem",
+            "fifo.pem",
+        }
         cert_handler = certificate.SslCertificateExpiryHandler(
                 ["tests/certificates/certs_invalid"],
                 [".pem"]
@@ -116,7 +171,8 @@ class TestExporter(unittest.TestCase):
                 certificateexporter_load_error_found = True
                 certname = TestExporter.__get_certname_by_sample_path(
                     metric.samples[0].labels['path'])
-                self.assertEqual(certname, "not-a-cert.pem")
+                self.assertTrue(certname in certnames_yet_to_find)
+                certnames_yet_to_find.remove(certname)
         self.assertEqual(certificateexporter_load_error_found, True)
 
     def test_exclude_regex(self):

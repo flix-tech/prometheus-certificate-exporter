@@ -25,8 +25,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--path', action='append', default=[], required=True,
-        help='Directory in which to look for certificates '
-             'for hostname matching'
+        help='Path in which to look for certificates. '
+             'If it\'s a directory will look for files inside it. '
+             'If it\'s a file it will check it '
+             'ignoring filename suffix matching and exclusion '
+             '(files are not constrained by '
+             ' --certificate-suffix and --certificate-exclude-regex '
+             'options)'
     )
     parser.add_argument(
         '--certificate-suffix', action='append', default=[], required=True,
