@@ -1,4 +1,4 @@
-# certificate-exporter
+# prometheus-certificate-exporter
 
 Prometheus exporter for x509 certificates. Requires python >= 3.5.
 
