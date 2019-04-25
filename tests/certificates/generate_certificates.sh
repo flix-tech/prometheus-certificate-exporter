@@ -45,5 +45,6 @@ cp -r ${CERT_DIR} ${CERT_DIR}_copy
 # Generate a failing certificate dir
 [ -d ${CERT_DIR}_invalid ] || mkdir ${CERT_DIR}_invalid
 echo "Not a cert" > ${CERT_DIR}_invalid/not-a-cert.pem
+echo "Also not a cert" > ${CERT_DIR}_invalid/wrong.suffix
 mkfifo ${CERT_DIR}_invalid/fifo.pem
 mkdir ${CERT_DIR}_invalid/directory.pem

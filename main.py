@@ -34,8 +34,9 @@ if __name__ == "__main__":
              'options)'
     )
     parser.add_argument(
-        '--certificate-suffix', action='append', default=[], required=True,
-        help='Suffix to match against, when looking for certificates'
+        '--certificate-suffix', action='append', default=[],
+        help='Suffix to match against, when looking for certificates. '
+             'Defaults to no suffix, so every file will be matched.'
     )
     parser.add_argument(
         '--certificate-exclude-regex', type=str, default=None,

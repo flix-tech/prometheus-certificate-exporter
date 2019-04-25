@@ -76,7 +76,7 @@ class SslCertificateExpiryHandler:
             certificate_suffixes,
             exclude_regex=None):
         self.__paths = list(map(lambda s: Path(s), search_paths))
-        self.__certificate_suffixes = certificate_suffixes
+        self.__certificate_suffixes = certificate_suffixes or [""]
         self.__exclude_regex = exclude_regex
 
     @CERTIFICATEEXPORTER_LOOKUP_DURATION.time()
