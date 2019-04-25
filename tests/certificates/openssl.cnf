@@ -150,7 +150,7 @@ commonName_defaulti = test.flix.tech
 commonName_max			= 64
 
 emailAddress			= Email Address
-emailAddress_default	= team.platform@flixbus.com
+emailAddress_default	= dummy@flixbus.com
 emailAddress_max		= 64
 
 # SET-ex3			= SET extension number 3
