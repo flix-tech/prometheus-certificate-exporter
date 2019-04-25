@@ -193,3 +193,21 @@ class TestExporter(unittest.TestCase):
                     self.assertTrue(certname in certnames_yet_to_find)
                     certnames_yet_to_find.remove(certname)
         self.assertEqual(len(certnames_yet_to_find), 0)
+
+    def test_no_suffix(self):
+        certnames_yet_to_find = {"not-a-cert.pem", "wrong.suffix"}
+        cert_handler = certificate.SslCertificateExpiryHandler(
+                ["tests/certificates/certs_invalid"],
+                []
+            )
+        registry = prometheus_client.core.REGISTRY
+        registry.register(cert_handler)
+        self.__collectors_to_unregister.append(cert_handler)
+        for metric in registry.collect():
+            if metric.name == "certificateexporter_load_error":
+                for sample in list(metric.samples):
+                    certname = TestExporter.__get_certname_by_sample_path(
+                        sample.labels['path'])
+                    self.assertTrue(certname in certnames_yet_to_find)
+                    certnames_yet_to_find.remove(certname)
+        self.assertEqual(len(certnames_yet_to_find), 0)
