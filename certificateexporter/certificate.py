@@ -157,7 +157,7 @@ class SslCertificateExpiryHandler:
         certs, load_error_paths = self.__load_ssl_certs()
         for cert in certs:
             cert_path = str(cert.cert_path)
-            cert_subjects = ";".join(cert.subjects)
+            cert_subjects = ";".join([str(s) for s in cert.subjects])
             cert_issuer = cert.issuer_cn or "unknown"
             cert_begin.add_metric(
                 [cert_path, cert_issuer, cert_subjects],
