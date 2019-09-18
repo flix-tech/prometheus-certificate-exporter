@@ -159,12 +159,9 @@ class SslCertificateExpiryHandler:
             cert_path = str(cert.cert_path)
             cert_subjects = ";".join([str(s) for s in cert.subjects])
             cert_issuer = cert.issuer_cn or "unknown"
-            cert_begin.add_metric(
-                [cert_path, cert_issuer, cert_subjects],
-                cert.begin_validity)
-            cert_end.add_metric(
-                [cert_path, cert_issuer, cert_subjects],
-                cert.end_validity)
+            labels = [cert_path, cert_issuer, cert_subjects]
+            cert_begin.add_metric(labels, cert.begin_validity)
+            cert_end.add_metric(labels, cert.end_validity)
         for path in load_error_paths:
             load_error.add_metric([path], 1)
         logging.debug("CertificateExporter, metric collection complete.")
