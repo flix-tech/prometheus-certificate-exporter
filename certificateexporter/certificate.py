@@ -4,8 +4,11 @@ from pathlib import Path
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
-from cryptography.x509 import (Certificate, NameOID,
-                               SubjectAlternativeName, ExtensionNotFound)
+from cryptography.x509 import (Certificate, ExtensionNotFound, NameOID,
+                               SubjectAlternativeName)
+
+import pem
+
 from prometheus_client import Summary
 from prometheus_client.core import GaugeMetricFamily
 
@@ -88,14 +91,18 @@ class SslCertificateExpiryHandler:
                 load_error_paths.append(str(cert_path))
                 continue
             try:
-                cert_data = cert_path.read_bytes()
-                cert = x509.load_pem_x509_certificate(
-                    cert_data, default_backend())
-                certs.append(Cert(cert=cert, cert_path=cert_path))
+                parsed_certs = pem.parse(cert_path.read_bytes())
+                if len(parsed_certs) == 0:
+                    raise Exception("certificate cannot be parsed")
+                for cert_data in parsed_certs:
+                    cert = x509.load_pem_x509_certificate(
+                        cert_data.as_bytes(), default_backend())
+                    certs.append(Cert(cert=cert, cert_path=cert_path))
             except Exception as e:
                 logging.warning("Failed loading certificate at {}: {}: {}"
                                 .format(str(cert_path), type(e).__name__, e))
                 load_error_paths.append(str(cert_path))
+
         logging.debug("Found {} SSL certificates".format(len(certs)))
         return certs, load_error_paths
 

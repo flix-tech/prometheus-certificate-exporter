@@ -1,6 +1,7 @@
 *.pyc
 __pycache__
 .idea
+tags
 
 tests/certificates/**
 !tests/certificates/generate_certificates.sh
